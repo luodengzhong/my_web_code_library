@@ -1,0 +1,1 @@
+var web_app = {root:"/filepreview"}
