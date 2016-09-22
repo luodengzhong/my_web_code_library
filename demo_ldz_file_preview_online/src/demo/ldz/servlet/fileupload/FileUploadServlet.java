@@ -17,63 +17,64 @@ import demo.ldz.util.File2PreviewConverter;
 
 public class FileUploadServlet extends HttpServlet {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		super.doGet(req, resp);
-	}
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        super.doGet(req, resp);
+    }
 
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		// super.doPost(request, response);
-		// 文件上传采用cos组件上传，可更换为commons-fileupload上传，文件上传后，保存在upload文件夹
-		// 获取文件上传路径
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // super.doPost(request, response);
+        // 文件上传采用cos组件上传，可更换为commons-fileupload上传，文件上传后，保存在upload文件夹
+        // 获取文件上传路径
 
-		String saveDirectory = request.getRealPath("/") + "upload";
-		// 打印上传路径信息
-		System.out.println(saveDirectory);
-		// 每个文件最大50m
-		int maxPostSize = 50 * 1024 * 1024;
-		// 采用cos缺省的命名策略，重名后加1,2,3...如果不加dfp重名将覆盖
-		DefaultFileRenamePolicy dfp = new DefaultFileRenamePolicy();
-		// response的编码为"UTF-8",同时采用缺省的文件名冲突解决策略,实现上传,如果不加dfp重名将覆盖
-		MultipartRequest multi = new MultipartRequest(request, saveDirectory, maxPostSize, "UTF-8", dfp);
-		// MultipartRequest multi = new MultipartRequest(request, saveDirectory,
-		// maxPostSize,"UTF-8");
-		// 输出反馈信息
-		Enumeration files = multi.getFileNames();
-		doc2Pdf(multi, saveDirectory);
-		// 根据报表的类型，跳转到不同的页面
-		request.getRequestDispatcher("pages/documentUploadSuccess.jsp").forward(request, response);
-	}
+        String saveDirectory = request.getRealPath("/") + "upload";
+        // 打印上传路径信息
+        System.out.println(saveDirectory);
+        // 每个文件最大50m
+        int maxPostSize = 500 * 1024 * 1024;
+        // 采用cos缺省的命名策略，重名后加1,2,3...如果不加dfp重名将覆盖
+        DefaultFileRenamePolicy dfp = new DefaultFileRenamePolicy();
+        // response的编码为"UTF-8",同时采用缺省的文件名冲突解决策略,实现上传,如果不加dfp重名将覆盖
+        MultipartRequest multi = new MultipartRequest(request, saveDirectory, maxPostSize, "UTF-8", dfp);
+        // MultipartRequest multi = new MultipartRequest(request, saveDirectory,
+        // maxPostSize,"UTF-8");
+        // 输出反馈信息
+        Enumeration files = multi.getFileNames();
+        doc2Pdf(request, response, multi, saveDirectory);
+        // 根据报表的类型，跳转到不同的页面
+        request.getRequestDispatcher("pages/documentUploadSuccess.jsp").forward(request, response);
+    }
 
-	private void doc2Pdf(MultipartRequest multi, String saveDirectory) {
-		Enumeration files = multi.getFileNames();
-		while (files.hasMoreElements()) {
-			String name = (String) files.nextElement();
-			File f = multi.getFile(name);
-			if (f != null) {
-				String fileName = multi.getFilesystemName(name);
-				// 获取上传文件的扩展名
-				String extName = fileName.substring(fileName.lastIndexOf(".") + 1);
-				// 文件全路径
-				String lastFileName = saveDirectory + "\\" + fileName;
-				// 获取需要转换的文件名,将路径名中的'\'替换为'/'
-				String converfilename = saveDirectory.replaceAll("\\\\", "/") + "/" + fileName;
-				System.out.println(converfilename);
-				// 调用转换类DocConverter,并将需要转换的文件传递给该类的构造方法
-				File2PreviewConverter d = new File2PreviewConverter(converfilename);
-				// 调用conver方法开始转换，先执行doc2pdf()将office文件转换为pdf;再执行pdf2swf()将pdf转换为swf;
-				d.conver();
-				// 调用getswfPath()方法，打印转换后的swf文件路径
-				System.out.println(d.getswfPath());
-				// 生成swf相对路径，以便传递给flexpaper播放器
-				String swfpath = "upload" + d.getswfPath().substring(d.getswfPath().lastIndexOf("/"));
-				// request.getSession().setAttribute("swfpath", swfpath);
-			}
-		}
-	}
+    private void doc2Pdf(HttpServletRequest request, HttpServletResponse response, MultipartRequest multi, String saveDirectory) {
+        Enumeration files = multi.getFileNames();
+        StringBuffer sb = new StringBuffer();
+        while (files.hasMoreElements()) {
+            String name = (String) files.nextElement();
+            File f = multi.getFile(name);
+            if (f != null) {
+                String fileName = multi.getFilesystemName(name);
+                // 获取上传文件的扩展名
+                String extName = fileName.substring(fileName.lastIndexOf(".") + 1);
+                // 文件全路径
+                String lastFileName = saveDirectory + "\\" + fileName;
+                // 获取需要转换的文件名,将路径名中的'\'替换为'/'
+                String converfilename = saveDirectory.replaceAll("\\\\", "/") + "/" + fileName;
+                System.out.println(converfilename);
+                // 调用转换类DocConverter,并将需要转换的文件传递给该类的构造方法
+                File2PreviewConverter d = new File2PreviewConverter(converfilename);
+                // 调用conver方法开始转换，先执行doc2pdf()将office文件转换为pdf;再执行pdf2swf()将pdf转换为swf;
+                d.conver();
+                // 调用getswfPath()方法，打印转换后的swf文件路径
+                System.out.println(d.getswfPath());
+                // 生成swf相对路径，以便传递给flexpaper播放器
+                String swfpath = "upload" + d.getswfPath().substring(d.getswfPath().lastIndexOf("/"));
+                sb.append(swfpath).append(";");
+            }
+        }
+        request.getSession().setAttribute("swfpath", sb.toString());
+    }
 
 }

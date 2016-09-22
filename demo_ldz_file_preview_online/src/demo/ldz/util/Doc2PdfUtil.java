@@ -85,7 +85,7 @@ public class Doc2PdfUtil {
 			throw new IllegalArgumentException("原始word文件名不是word文档,或者descFileName为空");
 		}
 		Doc2PdfUtil t = new Doc2PdfUtil();
-		String descFileName = orgfileName.substring(0, orgfileName.indexOf(".")) + ".pdf";
+		String descFileName = orgfileName.substring(0, orgfileName.lastIndexOf(".")) + ".pdf";
 		t.doc2Pdf(new File(orgfileName), new File(descFileName));
 		return descFileName;
 	}
